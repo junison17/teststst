@@ -1,35 +1,25 @@
-require('dotenv').config();
-const express = require('express');
-const fetch = require('node-fetch');
-const cors = require('cors');
-const app = express();
+document.getElementById('sendButton').addEventListener('click', function() {
+    const userInput = document.getElementById('userInput').value;
+    const chat = document.getElementById('chat');
 
-app.use(cors());
-app.use(express.json());
+    fetch('/generate-text', { // '/generate-text'는 서버 측 엔드포인트입니다.
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: userInput })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // 응답 데이터를 사용하여 채팅에 메시지 추가
+        const assistantResponse = document.createElement('div');
+        assistantResponse.classList.add('chat-message', 'assistant');
+        assistantResponse.textContent = `어시스턴트: ${data.text}`;
+        chat.appendChild(assistantResponse);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 
-app.post('/api/completions', async (req, res) => {
-    const userInput = req.body.prompt;
-
-    try {
-        const response = await fetch('https://api.openai.com/v1/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "text-davinci-003", // 사용하려는 모델명으로 변경하세요.
-                prompt: userInput,
-                max_tokens: 150
-            })
-        });
-
-        const data = await response.json();
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+    document.getElementById('userInput').value = ''; // 입력란을 비웁니다.
 });
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
